@@ -1,5 +1,5 @@
 ;   Calculadora INTEL-32
-;   Arquivo de funcoes de SUBTRACAO
+;   Arquivo de funcoes de DIVISAO
 
 %define    numero1_16   [ebp-4]
 %define    numero2_16   [ebp-11]
@@ -21,21 +21,24 @@ section .data
     msgn2        db      "Digite o segundo numero: ", 0
     size_msgn2   equ     $-msgn2
 
-    msgSUBTRACAO16    db      "=========== SUBTRACAO de 16 bits ===========",0xA, 0
-    size_msgSUBTRACAO16   equ     $-msgSUBTRACAO16
+    msgDIVISAO16    db      "=========== DIVISAO de 16 bits ===========",0xA, 0
+    size_msgDIVISAO16   equ     $-msgDIVISAO16
 
-    msgSUBTRACAO32    db      "=========== SUBTRACAO de 32 bits ===========",0xA, 0
-    size_msgSUBTRACAO32   equ     $-msgSUBTRACAO32
+    msgDIVISAO32    db      "=========== DIVISAO de 32 bits ===========",0xA, 0
+    size_msgDIVISAO32   equ     $-msgDIVISAO32
 
     msgResultado db      "Resultado: ", 0
     size_msgResultado equ $-msgResultado
+
+    msgOVERFLOW db      "OCORREU OVERFLOW", 0xA, 0
+    size_msgOVERFLOW equ $-msgOVERFLOW
 
     extern precisao
     extern input
 
 section .text
  
-    global  _SUBTRACAO
+    global  _DIVISAO
 
     extern _MENU
     extern _print
@@ -48,26 +51,26 @@ section .text
     extern _SAIR
     global break
 
-_SUBTRACAO:
+_DIVISAO:
     push    ebp
     mov     ebp, esp
 
 
     mov     AL, [precisao]
     cmp     AL, Prec32bits
-    je      _SUBTRACAO32
+    je      _DIVISAO32
     cmp     AL, Prec16bits
-    je      _SUBTRACAO16
+    je      _DIVISAO16
 
     jmp     _SAIR
 
-_SUBTRACAO16:
+_DIVISAO16:
     enter  16,0     ; alocando espaço para duas strings de numeros de 16 bits
     ; Cada numero  de 16bits pode ter no máximo: 5 digitos + 1 sinal + 1 enter = 7 bytes, arredondando para 8
 
-    ; "=========== SUBTRACAO de 16 bits ==========="
-    push    msgSUBTRACAO16
-    push    size_msgSUBTRACAO16
+    ; "=========== DIVISAO de 16 bits ==========="
+    push    msgDIVISAO16
+    push    size_msgDIVISAO16
     call    _print
 
     ; "Digite o primeiro numero: "
@@ -103,32 +106,36 @@ _SUBTRACAO16:
 
     push    eax                ; push eax (primeiro numero em inteiro)       
 
-
     ; Transformar para inteiro N2
     mov     eax, ebp
     sub     eax, 16
     push    eax             ; push ebp-16 (endereço do segundo numero em string)
     call    _toInt
 
-    ; Realizar a SUBTRACAO N2 = N1 + N2
-    pop     ebx             ; N1
+    mov     ebx, eax        ; segundo numero
+    ; Realizar a DIVISAO N1 = N1 / N2
+    pop     eax       ; pega o primeiro numero
 
-    cmp     ax, 0
+    and     eax, 0x0000FFFF
+    and     ebx, 0x0000FFFF
+
+
+    cwd
+
+
+    idiv    bx        ; DIVISAO os dois numeros
+
+    mov     edx, eax
+    neg     edx
+    cmp     edx, 0
     jge     .continua
-.1negativo:
-    cmp     bx, 0
-    jge     .continua
-.2negativos:
-    neg     eax
-    neg     ebx
+.negativo:
+    or      eax, 0xFFFF0000 ;completa o eax caso negativo
+
 .continua:
 
-    sub     bx, ax        ; SUBTRACAO os dois numeros
-
-
-
     ; Transformar o resultado para string
-    push    ebx             ; push eax (resultado da SUBTRACAO)
+    push    eax             ; push eax (resultado da DIVISAO)
    
     mov     eax, ebp
     sub     eax, 8
@@ -164,13 +171,13 @@ _SUBTRACAO16:
     leave
     jmp     _MENU
 
-_SUBTRACAO32:
+_DIVISAO32:
 
     enter  24,0
 
-    ; "=========== SUBTRACAO de 32 bits ==========="
-    push    msgSUBTRACAO32
-    push    size_msgSUBTRACAO32
+    ; "=========== DIVISAO de 32 bits ==========="
+    push    msgDIVISAO32
+    push    size_msgDIVISAO32
     call    _print
 
     ; "Digite o primeiro numero: "
@@ -209,13 +216,16 @@ _SUBTRACAO32:
     push    eax             ; push ebp-24 (endereço do segundo numero em string)
     call    _toInt
 
-    ; Realizar a SUBTRACAO N2 = N1 - N2
-    pop     ebx             ; pega o primeiro numero
-    sub     ebx, eax        ; SUBTRACAO os dois numeros
+    mov     ebx, eax        ; segundo numero
+    ; Realizar a DIVISAO N1 = N1 / N2
+    pop     eax       ; pega o primeiro numero
 
+break:
+
+    idiv    bx        ; DIVISAO os dois numeros
 
     ; Transformar o resultado para string
-    push    ebx             ; push eax (resultado da SUBTRACAO)
+    push    eax             ; push eax (resultado da DIVISAO)
 
     mov     eax, ebp
     sub     eax, 12
@@ -251,3 +261,4 @@ _SUBTRACAO32:
 
     leave
     jmp     _MENU
+

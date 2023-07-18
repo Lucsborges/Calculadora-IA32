@@ -256,4 +256,4 @@ _OVERFLOW:
     call    _print
 
     leave
-    jmp    _MENU
+    jmp    _SAIR

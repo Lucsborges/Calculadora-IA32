@@ -56,7 +56,7 @@ section .text
     extern  _MULTIPLICACAO
     extern  _DIVISAO
     ;extern  _EXPONENCIACAO
-    ;extern  _MOD
+    extern  _MOD
 
 _start: ; Main program
 
@@ -146,7 +146,7 @@ _MENU:
     cmp     AL, '5'
     ;je      _EXPONENCIACAO
     cmp     AL, '6'
-    ;je      _MOD
+    je      _MOD
     cmp     AL, '7'
     je      _SAIR
 
