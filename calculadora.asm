@@ -3,8 +3,11 @@
 ;
 
 
-%define    N16bits       0x30
-%define    N32bits       0x31
+%define    Prec16bits   0x30
+%define    Prec32bits   0x31
+
+%define    size_16Bits  7 
+%define    size_32Bits  12
 
 section .data
 
@@ -23,9 +26,6 @@ section .data
     size_msg_menu       equ     $-msg_menu
 
 
-    ent                 db      0xA,0
-    size_enter          equ     $-ent
-
 section .bss
     ; As únicas variáveis globais podem ser os ponteiros para os strings de texto das mensagens,
     user_name   resb    256     ;uma variável para receber o nome do usuário,
@@ -33,23 +33,26 @@ section .bss
 
     precisao    resb    2       ;uma variável para receber a resposta de precisão
                                 ; e
-    input       resb    2       ;uma variável para receber a opção do menu 
+    input       resb    255     ;uma variável para receber a opção do menu 
                                 ;TODAS as outras variáveis DEVEM ser LOCAIS NA PILHA.
 
     global precisao
+    global input
 section .text
-    global  _start
-    global  _print
-    global  _inputStr
-    global  _inputN
-    global  _inputN16
-    global  _inputN32
-    global  _toInt
-    global  _SAIR
-    global  _MENU
+    global _start
+    global _print
+    global _inputStr
+    global _inputN
+    global _inputN16
+    global _inputN32
+    global _toInt
+    global _toStr
+    global _SAIR
+    global _MENU
+    extern break
     
     extern  _SOMA
-    ;extern  _SUBTRACAO
+    extern  _SUBTRACAO
     ;extern  _MULTIPLICACAO
     ;extern  _DIVISAO
     ;extern  _EXPONENCIACAO
@@ -94,18 +97,19 @@ _start: ; Main program
 
     ; ============= Escolha da precisão ======================
     ; "Vai  trabalhar  com  16  ou  32  bits  (digite  0  para  16,  e  1  para  32):"
-    ;push    msg_precisao
-    ;push    size_msg_precisao
-    ;call   _print
+    push    msg_precisao
+    push    size_msg_precisao
+    call   _print
 
     ; Ler a precisão
-    push    input
-    push    255
+    push    precisao
+    push    2
     call    _inputStr
 
     ; Converter o valor lido da precisão para inteiro
     ;push    precisao
     ;call    _toInt
+
    
 _MENU:
     ; ============= Escolha da operação ======================
@@ -117,9 +121,9 @@ _MENU:
     ; -  5:  EXPONENCIACAO 
     ; -  6:  MOD
     ; -  7:  SAIR
-    ;push    msg_menu
-    ;push    size_msg_menu
-    ;call   _print
+    push    msg_menu
+    push    size_msg_menu
+    call   _print
 
 
     ; Ler a opção
@@ -127,25 +131,23 @@ _MENU:
     push    2
     call    _inputStr
 
-    ; Converter o valor lido da opção para inteiro
-    ;push    WORD[input]
-    ;call    _toInt
+
     
     mov     AL, [input]
 
-    cmp     AL, 0x31
+    cmp     AL, '1'
     je      _SOMA
-    cmp     WORD [input], 2
-    ;je      _SUBTRACAO
-    cmp     WORD [input], 3
+    cmp     AL, '2'
+    je      _SUBTRACAO
+    cmp     AL, '3'
     ;je      _MULTIPLICACAO
-    cmp     WORD [input], 4
+    cmp     AL, '4'
     ;je      _DIVISAO
-    cmp     WORD [input], 5
+    cmp     AL, '5'
     ;je      _EXPONENCIACAO
-    cmp     WORD [input], 6
+    cmp     AL, '6'
     ;je      _MOD
-    cmp     WORD [input], 7
+    cmp     AL, '7'
     je      _SAIR
 
 
@@ -157,15 +159,47 @@ _SAIR:
     int     80h           ; Chamar a interrupção 80h
 
 
-_toInt: ; Converte uma string de numero para inteiro e retorna em BL
-    push    ebp
-    mov     ebp, esp
-    mov     ebx, 0
-    mov     BL, [ebp+8]
-    sub     BL, 0x30
-    mov     BYTE [ebp+8], BL
-    pop     ebp
-    ret     2
+_toInt: ; Converte uma string de numero para inteiro e retorna em EAX
+    enter 0,0
+
+    mov     ecx, [ebp+8]    ; Endereço da string em eax
+
+    xor     eax, eax         ; Zerar eax
+    xor     ebx, ebx         ; Zerar ebx
+    xor     edx, edx         ; Zerar edx
+
+    cmp     BYTE [ecx], 0x2D     ;se for negativo
+    je      .negativo
+    jmp     .loop
+
+.negativo:
+    mov     esi, 1
+    inc     ecx
+    jmp     .loop
+
+.loop:
+    cmp     BYTE [ecx], 0xA     ;se for enter
+    je      .end
+    movzx   ebx, byte [ecx]     ;coloca o valor do byte em bx
+    sub     ebx, 0x30           ;subtrai 30h para transformar em numero
+    
+    imul    eax, 10             ;multiplica eax por 10
+    add     eax, ebx            ;adiciona o proximo valor
+
+    inc     ecx
+    jmp     .loop
+
+.negativo2:
+    neg     eax
+    mov     esi, 0
+    leave
+    ret    4
+
+.end:
+    cmp     esi, 1     ;se for negativo
+    je      .negativo2
+    leave   
+    ret     4
 
 ; A função principal e funções de entrada e saída de dados devem estar no mesmo arquivo 
 ; CALCULADORA.ASM.
@@ -186,39 +220,101 @@ _print:
 _inputStr:
     mov     eax, 3          ; Número da chamada de sistema para ler
     mov     ebx, 0          ; Descritor de arquivo (0 para a entrada padrão - STDIN)
-    mov     ecx, [esp+8]    ; Guardar a string em ecx
+    mov     ecx, [esp+8]    ; Guardar a string no ponteiro que esta em ecx
     mov     edx, [esp+4]    ; Colocar o número de bytes a serem lidos em edx
     int     80h             ; Chamar a interrupção 80h
     mov     BYTE [ecx+eax-1], 0  ; retira o enter da string
     ret     8
 
 _inputN:
+
     mov     AL, [precisao]
-    cmp     AL, N16bits
+    cmp     AL, Prec16bits
     je      _inputN16
-    cmp     AL, N32bits
+    cmp     AL, Prec32bits
     je      _inputN32
 
 _inputN16:
+
     mov     eax, 3
     mov     ebx, 0
-    mov     cx, [esp-4]
-    mov     dx, 2
+    mov     ecx, [esp+4]
+    mov     edx, size_16Bits
     int     80h
-    sub     esp, 2
-    ret     
+    ret     4
 
 _inputN32:
     mov     eax, 3
     mov     ebx, 0
-    mov     ecx, [esp-4]
-    mov     edx, 4
+    mov     ecx, [esp+4]
+    mov     edx, size_32Bits
     int     80h
-    sub     esp, 4
-    ret     
+    ret     4
 
+; DIV ->   EAX = EAX / source. Resto em DX, resultado em EAX
+_toStr: ; Função que recebe um número inteiro e retorna uma string
+    enter 12,0
+
+    mov     eax, [ebp+12]    ; numero inteiro em eax
+.continuaStr:
+    mov     ecx, ebp        ; endereço da string localmente reservada
+    xor     ebx, ebx
+    mov     bx, 10          ; divisor em bx
+
+    xor     edi, edi        ; zera o contador do tamanho da string
+    cmp     eax, 0          ; testa se é negativo ou zero
+    je      .zero
+    jge     .loop
+    jnge    .negativo
+
+.negativo:
+    mov     esi, 1          ;seta a flag de numero negativo
+    neg     eax
+    jmp     .preenche
+.zero:          ;resultado é zero
+    dec     ecx
+    mov     BYTE [ecx], 0x30     ;coloca o sinal negativo na string
+    inc     edi
+    jmp     .loop
+.loop:
+    cmp     eax, 0          ; testa se é zero
+    je      .testaneg
+    xor     edx, edx    ; limpa o resto da divisão
+    div     ebx          ; divide eax = eax / 10  ; DX = eax mod 10
+    
+    dec    ecx             ; incrementa o endereço da string
+    add    DL, 0x30     ; soma 30h para transformar em ascii
+    mov    [ecx], DL    ; coloca o valor do resto na string     
+    
+    inc     edi             ; incrementa o contador do tamanho da string
+
+    jmp     .loop
+
+.testaneg:
+    cmp     esi, 1     ;se for negativo vai pra .negativo2
+    jne     .preenche
+.negativo2:
+    dec     ecx
+    mov     BYTE [ecx], 0x2D     ;coloca o sinal negativo na string
+    inc     edi
+
+.preenche:
+    mov     eax, edi        ; coloca o tamanho da string em eax    
+    mov     edx, [ebp+8]          ; coloca o endereço da string a ser salvada em edx
+.loop_preenche:
+    cmp     edi, 0          ; testa se é zero
+    je      .end
+    mov     BL, [ecx]       ; coloca o valor da string em DL
+    mov     [edx], BL       ; coloca o valor da string no endereço de destino
+    inc     edx             ; incrementa o endereço de destino
+    inc     ecx             
+    dec     edi             ; decrementa o tamanho da string
+    jmp     .loop_preenche
+
+.end:
+    leave
+    ret     8
 
 ; ================= Coisas para fazer ainda =================
-; Fazer as operações
+; Fazer as operações de Multiplicacao, divisao, exponenciacao e modulo
 
-; input de numeros
