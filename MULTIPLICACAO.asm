@@ -113,6 +113,7 @@ _MULTIPLICACAO16:
     call    _toInt
 
 
+
     ; Realizar a MULTIPLICACAO N2 = N1 * N2
     pop     ebx             ; pega o primeiro numero
 
