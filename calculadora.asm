@@ -53,8 +53,8 @@ section .text
     
     extern  _SOMA
     extern  _SUBTRACAO
-    ;extern  _MULTIPLICACAO
-    ;extern  _DIVISAO
+    extern  _MULTIPLICACAO
+    extern  _DIVISAO
     ;extern  _EXPONENCIACAO
     ;extern  _MOD
 
@@ -140,9 +140,9 @@ _MENU:
     cmp     AL, '2'
     je      _SUBTRACAO
     cmp     AL, '3'
-    ;je      _MULTIPLICACAO
+    je      _MULTIPLICACAO
     cmp     AL, '4'
-    ;je      _DIVISAO
+    je      _DIVISAO
     cmp     AL, '5'
     ;je      _EXPONENCIACAO
     cmp     AL, '6'
@@ -270,12 +270,12 @@ _toStr: ; Função que recebe um número inteiro e retorna uma string
 .negativo:
     mov     esi, 1          ;seta a flag de numero negativo
     neg     eax
-    jmp     .preenche
+    jmp     .loop
 .zero:          ;resultado é zero
     dec     ecx
-    mov     BYTE [ecx], 0x30     ;coloca o sinal negativo na string
+    mov     BYTE [ecx], 0x30     ;coloca 0
     inc     edi
-    jmp     .loop
+    jmp     .preenche
 .loop:
     cmp     eax, 0          ; testa se é zero
     je      .testaneg
@@ -315,6 +315,9 @@ _toStr: ; Função que recebe um número inteiro e retorna uma string
     leave
     ret     8
 
+
+
 ; ================= Coisas para fazer ainda =================
 ; Fazer as operações de Multiplicacao, divisao, exponenciacao e modulo
 
+; Consertar divisao em 32 bits com numeros negativos
