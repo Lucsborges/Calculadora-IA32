@@ -1,5 +1,5 @@
 ;   Calculadora INTEL-32
-;   Arquivo de funcoes de DIVISAO
+;   Arquivo de funcoes de EXPONENCIACAO
 
 %define    numero1_16   [ebp-4]
 %define    numero2_16   [ebp-11]
@@ -21,11 +21,11 @@ section .data
     msgn2        db      "Digite o segundo numero: ", 0
     size_msgn2   equ     $-msgn2
 
-    msgDIVISAO16    db      "=========== DIVISAO de 16 bits ===========",0xA, 0
-    size_msgDIVISAO16   equ     $-msgDIVISAO16
+    msgEXPONENCIACAO16    db      "=========== EXPONENCIACAO de 16 bits ===========",0xA, 0
+    size_msgEXPONENCIACAO16   equ     $-msgEXPONENCIACAO16
 
-    msgDIVISAO32    db      "=========== DIVISAO de 32 bits ===========",0xA, 0
-    size_msgDIVISAO32   equ     $-msgDIVISAO32
+    msgEXPONENCIACAO32    db      "=========== EXPONENCIACAO de 32 bits ===========",0xA, 0
+    size_msgEXPONENCIACAO32   equ     $-msgEXPONENCIACAO32
 
     msgResultado db      "Resultado: ", 0
     size_msgResultado equ $-msgResultado
@@ -38,7 +38,7 @@ section .data
 
 section .text
  
-    global  _DIVISAO
+    global  _EXPONENCIACAO
 
     extern _MENU
     extern _print
@@ -51,26 +51,26 @@ section .text
     extern _SAIR
     global break
 
-_DIVISAO:
+_EXPONENCIACAO:
     push    ebp
     mov     ebp, esp
 
 
     mov     AL, [precisao]
     cmp     AL, Prec32bits
-    je      _DIVISAO32
+    je      _EXPONENCIACAO32
     cmp     AL, Prec16bits
-    je      _DIVISAO16
+    je      _EXPONENCIACAO16
 
     jmp     _SAIR
 
-_DIVISAO16:
+_EXPONENCIACAO16:
     enter  16,0     ; alocando espaço para duas strings de numeros de 16 bits
     ; Cada numero  de 16bits pode ter no máximo: 5 digitos + 1 sinal + 1 enter = 7 bytes, arredondando para 8
 
-    ; "=========== DIVISAO de 16 bits ==========="
-    push    msgDIVISAO16
-    push    size_msgDIVISAO16
+    ; "=========== EXPONENCIACAO de 16 bits ==========="
+    push    msgEXPONENCIACAO16
+    push    size_msgEXPONENCIACAO16
     call    _print
 
     ; "Digite o primeiro numero: "
@@ -111,32 +111,22 @@ _DIVISAO16:
     sub     eax, 16
     push    eax             ; push ebp-16 (endereço do segundo numero em string)
     call    _toInt
+  
+    mov     ecx, eax ;N2  
+    dec     ecx
+    pop     eax      ;N1
+    mov     ebx, eax 
+    
+; EXPONENCIACAO
+.operacao: ; N1^N2
+    imul    bx
+    jo      _OVERFLOW
+    loop    .operacao
+    
 
-break:
-    mov     ebx, eax        ; segundo numero
-    ; Realizar a DIVISAO N1 = N1 / N2
-    pop     eax       ; pega o primeiro numero
-
-    and     eax, 0x0000FFFF
-    and     ebx, 0x0000FFFF
-
-
-    cwd
-
-
-    idiv    bx        ; DIVISAO os dois numeros
-
-    mov     edx, eax
-    neg     edx
-    cmp     edx, 0
-    jge     .continua
-.negativo:
-    or      eax, 0xFFFF0000 ;completa o eax caso negativo
-
-.continua:
 
     ; Transformar o resultado para string
-    push    eax             ; push eax (resultado da DIVISAO)
+    push    eax             ; push eax (resultado da EXPONENCIACAO)
    
     mov     eax, ebp
     sub     eax, 8
@@ -172,13 +162,13 @@ break:
     leave
     jmp     _MENU
 
-_DIVISAO32:
+_EXPONENCIACAO32:
 
     enter  24,0
 
-    ; "=========== DIVISAO de 32 bits ==========="
-    push    msgDIVISAO32
-    push    size_msgDIVISAO32
+    ; "=========== EXPONENCIACAO de 32 bits ==========="
+    push    msgEXPONENCIACAO32
+    push    size_msgEXPONENCIACAO32
     call    _print
 
     ; "Digite o primeiro numero: "
@@ -217,16 +207,20 @@ _DIVISAO32:
     push    eax             ; push ebp-24 (endereço do segundo numero em string)
     call    _toInt
 
-    mov     ebx, eax        ; segundo numero
-    ; Realizar a DIVISAO N1 = N1 / N2
-    pop     eax       ; pega o primeiro numero
+    mov     ecx, eax ;N2  
+    dec     ecx
+    pop     eax      ;N1
+    mov     ebx, eax 
+    
+; EXPONENCIACAO
+.operacao: ; N1^N2
+    imul    ebx
+    jo      _OVERFLOW
+    loop    .operacao
 
-
-    cdq
-    idiv    ebx        ; DIVISAO os dois numeros
-
+    jo      _OVERFLOW
     ; Transformar o resultado para string
-    push    eax             ; push eax (resultado da DIVISAO)
+    push    eax             ; push eax (resultado da EXPONENCIACAO)
 
     mov     eax, ebp
     sub     eax, 12
@@ -263,3 +257,11 @@ _DIVISAO32:
     leave
     jmp     _MENU
 
+_OVERFLOW:
+
+    push    msgOVERFLOW
+    push    size_msgOVERFLOW
+    call    _print
+
+    leave
+    jmp    _SAIR

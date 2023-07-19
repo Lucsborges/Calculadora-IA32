@@ -2,10 +2,19 @@
 
 ## Trabalho desenvolvido durante a disciplina de Software Básico
 
-### Alunos
+### Descrição
 
-    - Lucas Sousa Borges - 160052408
-    - Andressa Layse Oliveira Silva - 170056236
+Calculadora simples desenvolvida em linguagem Intel Assembly x86.
+
+
+### Funções:
+- Soma
+- Subtração
+- Multiplicação
+- Divisão
+- Potenciação
+- Módulo
+
 
 Para compilar e linkar:
 

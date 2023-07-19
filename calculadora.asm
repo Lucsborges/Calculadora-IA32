@@ -55,7 +55,7 @@ section .text
     extern  _SUBTRACAO
     extern  _MULTIPLICACAO
     extern  _DIVISAO
-    ;extern  _EXPONENCIACAO
+    extern  _EXPONENCIACAO
     extern  _MOD
 
 _start: ; Main program
@@ -67,32 +67,32 @@ _start: ; Main program
 ; outras funções.
     
     ; "Bem-vindo. Digite seu nome: "
-    ;push    msg_bem_vindo              
-    ;push    size_msg_bem_vindo        
-    ;call    _print
+    push    msg_bem_vindo              
+    push    size_msg_bem_vindo        
+    call    _print
 
     ; Ler o nome do usuário
-    ;push    user_name                  
-    ;push    255                        
-    ;call    _inputStr
+    push    user_name                  
+    push    255                        
+    call    _inputStr
     
 
     
 
     ; "Hola, "
-    ;push    msg_hola1
-    ;push    size_hola1
-    ;call   _print
+    push    msg_hola1
+    push    size_hola1
+    call   _print
 
     ; Escrever o nome do usuário
-    ;push    user_name
-    ;push    user_len
-    ;call    _print
+    push    user_name
+    push    user_len
+    call    _print
     
     ; ", bem-vindo ao programa de CALC IA-32"
-    ;push    msg_hola2
-    ;push    size_hola2
-    ;call   _print
+    push    msg_hola2
+    push    size_hola2
+    call   _print
 
 
     ; ============= Escolha da precisão ======================
@@ -105,10 +105,6 @@ _start: ; Main program
     push    precisao
     push    2
     call    _inputStr
-
-    ; Converter o valor lido da precisão para inteiro
-    ;push    precisao
-    ;call    _toInt
 
    
 _MENU:
@@ -144,12 +140,11 @@ _MENU:
     cmp     AL, '4'
     je      _DIVISAO
     cmp     AL, '5'
-    ;je      _EXPONENCIACAO
+    je      _EXPONENCIACAO
     cmp     AL, '6'
     je      _MOD
     cmp     AL, '7'
     je      _SAIR
-
 
 
 _SAIR:
@@ -318,6 +313,3 @@ _toStr: ; Função que recebe um número inteiro e retorna uma string
 
 
 ; ================= Coisas para fazer ainda =================
-; Fazer as operações de Multiplicacao, divisao, exponenciacao e modulo
-
-; Consertar divisao em 32 bits com numeros negativos
